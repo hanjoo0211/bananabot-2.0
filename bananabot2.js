@@ -1,12 +1,14 @@
 const scriptName = "bananabot2";
 
 // 카카오링크 설정
-/*import KakaoLinkKeys from './key';
-const kakaoKey = new KakaoLinkKeys();
+const keys = DataBase.getDataBase('key.txt').split('\n');
+const kakaoKey = keys[0].trim();
+const kakaoID = keys[1].trim();
+const kakaoPWD = keys[2].trim();
 
 const { KakaoLinkClient } = require('kakaolink');
-const Kakao = new KakaoLinkClient(kakaoKey.key);
-Kakao.login(kakaoKey.id, kakaoKey.pwd);
+const Kakao = new KakaoLinkClient(kakaoKey, "http://lt2.kr");
+Kakao.login(kakaoID, kakaoPWD);
 
 setTimeout(Api.reload, 86400000);
 
@@ -20,7 +22,11 @@ setTimeout(Api.reload, 86400000);
  * (string) packageName
  */
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-
+  
+  if (msg.indexOf("?테스트") == 0) {
+    tt = DataBase.getDataBase('key.txt')
+    replier.reply(typeof(tt.split('\n')[0].trim()));
+  }
 
   // 롤 챔피언 전적 검색
   if (msg.indexOf("?롤충 ") == 0) {
@@ -72,7 +78,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
   // 모든갤 랜덤개념글
   if ((msg.indexOf("?") == 0) && msg.indexOf("갤") == msg.length - 1) {
-    // try {
+    try {
       // 명령어를 구글에 검색
       let toSearch = msg.replace(/\?/, "").replace(/ /g, "%20");
       let searchLink = "https://www.google.com/search?q=" + toSearch;
@@ -138,9 +144,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
       let galleryName = String(galleryTitle).replace(/title>/, "").replace(/<\/title/, "").replace(/ - 커뮤니티 포털 디시인사이드/, "");
 
       replier.reply("🎲 " + galleryName + " 개념글\n\n" + data3);
-    // } catch (error) {
-      // replier.reply("검색하지 못했습니다.");
-    // }
+    } catch (error) {
+      replier.reply("검색하지 못했습니다.");
+    }
   }
 
 
@@ -272,9 +278,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
   // 코로나 라이브 현황
   if ((msg == "?코로나") || (msg == "?백신")) {
-    /*
+    
     try {
-      */
+    
     let coronaHtml = org.jsoup.Jsoup.connect("https://coronaboard.kr/").get().html();
     let coronaKRHtml = String(coronaHtml.match(/\{[^\}]+?"🇰🇷"\}/));
     let vaccineKRData = coronaHtml.split("vaccineDataForDashboard\":")[1].split(",\"KR\"")[0];
@@ -362,10 +368,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     }
 
     replier.reply(toReply);
-    /*
+    
     } catch (error) {
       replier.reply("오류가 발생했습니다. 다시 시도해주세요.");
-    }*/
+    }
   }
 
 
@@ -504,19 +510,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     replier.reply("[로스트아크 캐릭터 정보]\n\n" + result);
   }
 
-  // 코인
-  if (msg.indexOf("?코인") == 0) {
-    let toSearch = msg.replace(/\?코인 /, "");
-    let mark = getCoinMark(toSearch);
-    if (mark == null) {
-        replier.reply(toSearch + "(이)라는 암호화폐를 찾을 수 없습니다.");
-    } else {
-        let data = Utils.parse("https://api.upbit.com/v1/ticker?markets=" + mark).text();
-        data = JSON.parse(data);
-        replier.reply("현재 " + toSearch + " 시세는 " + data[0].trade_price + "원입니다.");
-    }
-  }
-
 
   // 올려
   if (msg == "?올려") {
@@ -575,6 +568,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     replier.reply(toReply);
   }
 
+
+  // 랜덤번역
+  if (Math.random() < 0.01) {
+    translate = Api.papagoTranslate('ko', 'en', msg);
+    replier.reply(translate)
+  }
 
 }
 
