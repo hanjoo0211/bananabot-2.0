@@ -1,7 +1,7 @@
 const scriptName = "bananabot2";
 
 // 카카오링크 설정
-import KakaoLinkKeys from './key';
+/*import KakaoLinkKeys from './key';
 const kakaoKey = new KakaoLinkKeys();
 
 const { KakaoLinkClient } = require('kakaolink');
@@ -63,9 +63,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
   // 한강 수온
   if (msg == "?한강") {
-    let hangangURL = 'https://api.hangang.msub.kr/'
-    let hangangAPI = org.jsoup.Jsoup.connect(hangangURL).get().html();
-    let waterTemp = hangangAPI.split("\"temp\":\"")[1].split("\",\"time")[0].replace(/<[^>]+>/g, "").trim();
+    var hangangAPI = Utils.getWebText("https://api.hangang.msub.kr/");
+    var waterTemp = hangangAPI.split("\"temp\":\"")[1].split("\",\"time")[0].replace(/<[^>]+>/g, "").trim();
 
     replier.reply("🌡 지금 한강은 " + waterTemp + "도 입니다.");
   }
@@ -73,54 +72,62 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
   // 모든갤 랜덤개념글
   if ((msg.indexOf("?") == 0) && msg.indexOf("갤") == msg.length - 1) {
-    try {
+    // try {
       // 명령어를 구글에 검색
       let toSearch = msg.replace(/\?/, "").replace(/ /g, "%20");
       let searchLink = "https://www.google.com/search?q=" + toSearch;
 
+      let isMgallery = false;
+      let isMiniGallery = false;
+
       // 검색 결과 중 디씨 홈페이지를 탐색
       let googleHtml = org.jsoup.Jsoup.connect(searchLink).get().html();
-      let dcLink = googleHtml.match(/gall.dcinside.com\/\/*\w*\/*board\/lists\?*id=\w+"/); // 보통 갤러리
-      let dcId = String(dcLink).replace(/gall.dcinside.com\/\/*\w*\/*board\/lists\?id=/, "").replace(/"/, "");
-      if (dcId == "null") {
-        dcLink = googleHtml.match(/gall.dcinside.com\/\/*\w*\/*board\/lists\/\?id=\w+&/); // url 끝에 페이지 수가 달려있는 경우
-        dcId = String(dcLink).replace(/gall.dcinside.com\/\/*\w*\/*board\/lists\/\?id=/, "").replace(/&/, "");
-        if (dcId == "null") {
-          dcLink = googleHtml.match(/m.dcinside.com\/\/*\w*\/*board\/\w+\/\d+/); // 갤러리 id를 게시물에서 가져올 경우
-          dcId = String(dcLink).replace(/m.dcinside.com\/\/*\w*\/*board\//, "").replace(/\/\d+/, "");
-          let googleHtml = org.jsoup.Jsoup.connect("https://" + dcLink).get().html();
-          if (googleHtml.match(/마이너/) == "마이너") {
-            dcLink = "mgallery";
-          }
-        }
+      let dcLink = googleHtml.match(/dcinside\.com.+?"/); // 보통 갤러리
+      if (String(dcLink).indexOf("mini") != -1) {
+        isMiniGallery = true;
       }
 
-      let isMgallery = String(dcLink).match(/mgallery/); // 마갤인가?
+      let dcId = String(dcLink).replace(/.+id=/, "").replace(/"/, "").replace(/&amp.+/, "");
+      if (dcId.indexOf("dcinside") == 0) {
+        dcId = String(dcId.match(/\/\w+\/\d+/)).replace(/\/\d+.+/, "").replace("/", "");
+      }
 
       // 해당 갤러리의 개념글 끝 페이지를 탐색
-      recommendedLink = "https://gall.dcinside.com/board/lists?id=" + dcId + "&exception_mode=recommend";
-      if (isMgallery == "mgallery") {
-        recommendedLink = "https://gall.dcinside.com/mgallery/board/lists?id=" + dcId + "&exception_mode=recommend";
+      let recommendedLink = "https://gall.dcinside.com/board/lists?id=" + dcId + "&exception_mode=recommend";
+      if (isMiniGallery) {
+        recommendedLink = "https://gall.dcinside.com/mini/board/lists?id=" + dcId + "&exception_mode=recommend";
       }
       let recommendedLinkHtml = org.jsoup.Jsoup.connect(recommendedLink).get().html();
-      pgEndLink = recommendedLinkHtml.match(/page=\d+&\D*exception_mode=recommend" class="page_end/);
-      pgEnd = String(pgEndLink).replace(/page=/, "").replace(/&\D*exception_mode=recommend" class="page_end/, "");
+      if (recommendedLinkHtml.indexOf("location.replace") != -1) {
+        isMgallery = true;
+        recommendedLink = "https://gall.dcinside.com/mgallery/board/lists?id=" + dcId + "&exception_mode=recommend";
+        recommendedLinkHtml = org.jsoup.Jsoup.connect(recommendedLink).get().html();
+      }
+      let pgEndLink = recommendedLinkHtml.match(/page_next.+\d.+page_end/);
+      let pgEnd = String(pgEndLink).match(/\d+/);
 
       // 페이지 랜덤
       let pageNum = Math.floor(Math.random() * pgEnd + 1);
-
-      if (isMgallery == "mgallery") {
+      let data = null
+      if (isMgallery) {
         data = org.jsoup.Jsoup.connect("https://gall.dcinside.com/mgallery/board/lists/?id=" + dcId + "&page=" + pageNum + "&exception_mode=recommend").get().html();
+      }
+      else if (isMiniGallery){
+        data = org.jsoup.Jsoup.connect("https://gall.dcinside.com/mini/board/lists/?id=" + dcId + "&page=" + pageNum + "&exception_mode=recommend").get().html();
       }
       else {
         data = org.jsoup.Jsoup.connect("https://gall.dcinside.com/board/lists/?id=" + dcId + "&page=" + pageNum + "&exception_mode=recommend").get().html();
       }
-      data2 = data.match(/"gall_num">\d{1,7}/g);
+      let data2 = data.match(/"gall_num">\d{1,100}/g);
 
       // 글 랜덤
       let postNum = Math.floor(Math.random() * data2.length);
-      if (isMgallery == "mgallery") {
+      let data3 = null
+      if (isMgallery) {
         data3 = "gall.dcinside.com/mgallery/board/view/?id=" + dcId + "&no=" + String(data2[postNum]).replace(/"gall_num">/, ""); // 랜덤글 링크
+      }
+      else if (isMiniGallery) {
+        data3 = "gall.dcinside.com/mini/board/view/?id=" + dcId + "&no=" + String(data2[postNum]).replace(/"gall_num">/, ""); // 랜덤글 링크
       }
       else {
         data3 = "gall.dcinside.com/board/view/?id=" + dcId + "&no=" + String(data2[postNum]).replace(/"gall_num">/, "");
@@ -128,17 +135,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
       // 갤러리 이름 크롤링
       let galleryTitle = recommendedLinkHtml.match(/title.+title/);
-      let galleryName = String(galleryTitle).replace(/title>/, "").replace(/<\/title/, "");
+      let galleryName = String(galleryTitle).replace(/title>/, "").replace(/<\/title/, "").replace(/ - 커뮤니티 포털 디시인사이드/, "");
 
-      // 날짜 크롤링
-      let data4 = org.jsoup.Jsoup.connect("https://" + data3).get().html();
-      data5 = data4.match(/"og:updated_time" content="\d+-\d+-\d+ \d+:\d+:\d+/);
-      uploadDate = String(data5).replace(/"og:updated_time" content="/, "");
-
-      replier.reply("🎲 " + galleryName + " 개념글\n🗓 " + uploadDate + "\n\n" + data3);
-    } catch (error) {
-      replier.reply("검색하지 못했습니다.");
-    }
+      replier.reply("🎲 " + galleryName + " 개념글\n\n" + data3);
+    // } catch (error) {
+      // replier.reply("검색하지 못했습니다.");
+    // }
   }
 
 
