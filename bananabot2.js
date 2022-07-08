@@ -24,9 +24,15 @@ setTimeout(Api.reload, 86400000);
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
   
   if (msg.indexOf("?테스트") == 0) {
-    tt = DataBase.getDataBase('key.txt')
-    replier.reply(typeof(tt.split('\n')[0].trim()));
+    DataBase.setDataBase('description.txt', "");
   }
+
+
+  if ((msg == "?바나나") || (msg == "?명령어")) {
+    let description = DataBase.getDataBase('description.txt');
+    replier.reply("※ 명령어 목록 " + "\u200b".repeat(501) + "\n\n" + description);
+  }
+
 
   // 롤 챔피언 전적 검색
   if (msg.indexOf("?롤충 ") == 0) {
