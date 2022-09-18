@@ -24,7 +24,8 @@ setTimeout(Api.reload, 86400000);
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
   
   if (msg.indexOf("?테스트") == 0) {
-    DataBase.setDataBase('description.txt', "");
+    tt = Database.exists('description.txt');
+    replier.reply(tt)
   }
 
 
@@ -75,11 +76,52 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
   // 한강 수온
   if (msg == "?한강") {
-    var hangangAPI = Utils.getWebText("https://api.hangang.msub.kr/");
-    var waterTemp = hangangAPI.split("\"temp\":\"")[1].split("\",\"time")[0].replace(/<[^>]+>/g, "").trim();
+    let hangangAPI = Utils.getWebText("https://api.hangang.msub.kr/");
+    let waterTemp = hangangAPI.split("\"temp\":\"")[1].split("\",\"time")[0].replace(/<[^>]+>/g, "").trim();
 
     replier.reply("🌡 지금 한강은 " + waterTemp + "도 입니다.");
   }
+
+
+    // 계산퀴즈
+    if (msg == "?계산퀴즈") {
+      let Num1 = Math.floor(Math.random() * 100 + 1);
+      let Num2 = Math.floor(Math.random() * 100 + 1);
+      let calcItem = ["+", "+", "+", "+", "×"]
+      let calcItemRandom = Math.floor(Math.random() * 5);
+      let calcItemToUse = calcItem[calcItemRandom];
+      let answer = null
+      if (calcItemRandom == 4) {
+        answer = Num1 * Num2;
+      }
+      else {
+        answer = Num1 + Num2;
+      }
+
+      replier.reply(sender + "님 문제 드리겠습니다.\
+      \n\n문제 : " + Num1 + " " + calcItemToUse + " " + Num2 + " = ?");
+      DataBase.setDataBase("Calc_" + String(sender), String(answer))
+    }
+
+    
+    
+    // if (msg != "?계산퀴즈") {
+    //   msgSenderForCalcQuiz = null;
+    //   if (msg == answerForCalcQuiz) {
+    //     replier.reply(sender + "님 정답입니다!");
+    //   }
+    //   else {
+    //     replier.reply(sender + " 이것도 계산못함 ㅋㅋ");
+    //   }
+    //   answerForCalcQuiz = null;
+    //   getCalcQuizOn = null;
+    // }
+  
+    // // 계산퀴즈 초기화
+    // if (msg == "?계산퀴즈초기화") {
+    //   msgSenderForCalcQuiz = null;
+    //   replier.reply("정상적으로 초기화되었습니다.");
+    // }
 
 
   // 모든갤 랜덤개념글
@@ -579,6 +621,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   if (Math.random() < 0.01) {
     translate = Api.papagoTranslate('ko', 'en', msg);
     replier.reply(translate)
+  }
+
+
+  // 스포티비 링크
+  if (msg.indexOf("?스포티비 ") == 0) {
+    let linkNum = msg.replace(/\?스포티비 /, "");
+    if(linkNum.length == 1) {
+      linkNum = '0' + linkNum;
+    }
+    let link = "https://ch" + linkNum + "-livecdn.spotvnow.co.kr/ch" + linkNum + "/spt" + linkNum + ".smil/chunklist.m3u8";
+
+    replier.reply(link);
   }
 
 }
